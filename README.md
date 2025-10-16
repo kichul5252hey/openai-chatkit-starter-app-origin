@@ -17,7 +17,7 @@ This repository is the simplest way to bootstrap a [ChatKit](http://openai.githu
 ### 1. Install dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. Create your environment file
@@ -38,7 +38,7 @@ You can get your OpenAI API key from the [OpenAI API Keys](https://platform.open
 
 Update `.env.local` with the variables that match your setup.
 
-- `OPENAI_API_KEY` — This must be an API key created **within the same org & project as your Agent Builder**. If you already have a different `OPENAI_API_KEY` env variable set in your terminal session, that one will take precedence over the key in `.env.local` one (this is how a Next.js app works). So, **please run `unset OPENAI_API_KEY` (`set OPENAI_API_KEY=` for Windows OS) beforehand**.
+- `OPENAI_API_KEY` — This must be an API key created **within the same org & project as your Agent Builder**. If you already have a different `OPENAI_API_KEY` env variable set in your terminal session, that one will take precedence over the key in `.env.local` one (this is how a Next.js app works). So, **please run `unset OPENAI_API_KEY` (`Remove-Item Env:\OPENAI_API_KEY` for Windows PowerShell or `set OPENAI_API_KEY=` for Windows CMD) beforehand**.
 - `NEXT_PUBLIC_CHATKIT_WORKFLOW_ID` — This is the ID of the workflow you created in [Agent Builder](https://platform.openai.com/agent-builder), which starts with `wf_...`
 - (optional) `CHATKIT_API_BASE` - This is a customizable base URL for the ChatKit API endpoint
 
@@ -47,7 +47,7 @@ Update `.env.local` with the variables that match your setup.
 ### 4. Run the app
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Visit `http://localhost:3000` and start chatting. Use the prompts on the start screen to verify your workflow connection, then customize the UI or prompt list in [`lib/config.ts`](lib/config.ts) and [`components/ChatKitPanel.tsx`](components/ChatKitPanel.tsx).
@@ -55,7 +55,7 @@ Visit `http://localhost:3000` and start chatting. Use the prompts on the start s
 ### 5. Deploy your app
 
 ```bash
-npm run build
+pnpm build
 ```
 
 Before deploying your app, you need to verify the domain by adding it to the [Domain allowlist](https://platform.openai.com/settings/organization/security/domain-allowlist) on your dashboard.
