@@ -8,9 +8,11 @@ import {
   GREETING,
   CREATE_SESSION_ENDPOINT,
   WORKFLOW_ID,
+  WORKFLOWS,
   getThemeConfig,
 } from "@/lib/config";
 import { ErrorOverlay } from "./ErrorOverlay";
+import { WorkflowIcon, Icon } from "./WorkflowIcon";
 import type { ColorScheme } from "@/hooks/useColorScheme";
 
 export type FactAction = {
@@ -61,6 +63,10 @@ export function ChatKitPanel({
       : "pending"
   );
   const [widgetInstanceKey, setWidgetInstanceKey] = useState(0);
+  const [currentWorkflowId, setCurrentWorkflowId] = useState(
+    WORKFLOWS[0]?.id ?? ""
+  );
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const setErrorState = useCallback((updates: Partial<ErrorState>) => {
     setErrors((current) => ({ ...current, ...updates }));
@@ -131,14 +137,12 @@ export function ChatKitPanel({
     };
   }, [scriptStatus, setErrorState]);
 
-  const isWorkflowConfigured = Boolean(
-    WORKFLOW_ID && !WORKFLOW_ID.startsWith("wf_replace")
-  );
+  const isWorkflowConfigured = Boolean(currentWorkflowId);
 
   useEffect(() => {
     if (!isWorkflowConfigured && isMountedRef.current) {
       setErrorState({
-        session: "Set NEXT_PUBLIC_CHATKIT_WORKFLOW_ID in your .env.local file.",
+        session: "워크플로우 ID가 설정되지 않았습니다.",
         retryable: false,
       });
       setIsInitializingSession(false);
@@ -162,14 +166,13 @@ export function ChatKitPanel({
       if (isDev) {
         console.info("[ChatKitPanel] getClientSecret invoked", {
           currentSecretPresent: Boolean(currentSecret),
-          workflowId: WORKFLOW_ID,
+          workflowId: currentWorkflowId,
           endpoint: CREATE_SESSION_ENDPOINT,
         });
       }
 
       if (!isWorkflowConfigured) {
-        const detail =
-          "Set NEXT_PUBLIC_CHATKIT_WORKFLOW_ID in your .env.local file.";
+        const detail = "워크플로우 ID가 설정되지 않았습니다.";
         if (isMountedRef.current) {
           setErrorState({ session: detail, retryable: false });
           setIsInitializingSession(false);
@@ -191,7 +194,7 @@ export function ChatKitPanel({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            workflow: { id: WORKFLOW_ID },
+            workflow: { id: currentWorkflowId },
             chatkit_configuration: {
               // enable attachments
               file_upload: {
@@ -258,14 +261,42 @@ export function ChatKitPanel({
         }
       }
     },
-    [isWorkflowConfigured, setErrorState]
+    [currentWorkflowId, isWorkflowConfigured, setErrorState]
   );
+
+  const currentWorkflow = WORKFLOWS.find((w) => w.id === currentWorkflowId);
+  const workflowDisplayName = currentWorkflow?.name ?? "워크플로우";
+
+  if (isDev) {
+    console.debug("[ChatKitPanel] Current workflow state", {
+      currentWorkflowId,
+      workflowDisplayName,
+      allWorkflows: WORKFLOWS,
+      isConfigured: isWorkflowConfigured,
+    });
+  }
 
   const chatkit = useChatKit({
     api: { getClientSecret },
     theme: {
       colorScheme: theme,
       ...getThemeConfig(theme),
+    },
+    header: {
+      enabled: true,
+      title: {
+        enabled: true,
+        text: workflowDisplayName,
+      },
+      rightAction: {
+        icon: "compose",
+        onClick: handleResetChat,
+      },
+    },
+    history: {
+      enabled: true,
+      showDelete: true,
+      showRename: true,
     },
     startScreen: {
       greeting: GREETING,
@@ -344,27 +375,83 @@ export function ChatKitPanel({
   }
 
   return (
-    <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
-      <ChatKit
-        key={widgetInstanceKey}
-        control={chatkit.control}
-        className={
-          blockingError || isInitializingSession
-            ? "pointer-events-none opacity-0"
-            : "block h-full w-full"
-        }
-      />
-      <ErrorOverlay
-        error={blockingError}
-        fallbackMessage={
-          blockingError || !isInitializingSession
-            ? null
-            : "Loading assistant session..."
-        }
-        onRetry={blockingError && errors.retryable ? handleResetChat : null}
-        retryLabel="Restart chat"
-      />
-    </div>
+    <>
+      {/* Workflow Selector - Completely separate from ChatKit */}
+      <div className="flex justify-center mb-4">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-slate-800 dark:bg-slate-900 text-white shadow-lg hover:bg-slate-700 dark:hover:bg-slate-800 transition-colors"
+          >
+            <WorkflowIcon
+              icon={currentWorkflow?.icon ?? "lightbulb"}
+              size={20}
+              className="text-yellow-400"
+            />
+            <span className="text-base font-medium">{workflowDisplayName}</span>
+            <Icon
+              name="chevron-down"
+              size={16}
+              className={`transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {/* Custom Dropdown Menu */}
+          {isDropdownOpen && (
+            <div className="absolute top-full mt-2 left-0 right-0 bg-slate-800 dark:bg-slate-900 rounded-lg shadow-xl overflow-hidden z-20">
+              {WORKFLOWS.map((workflow) => (
+                <button
+                  key={workflow.id}
+                  type="button"
+                  onClick={() => {
+                    setCurrentWorkflowId(workflow.id);
+                    setIsDropdownOpen(false);
+                    handleResetChat();
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-slate-700 dark:hover:bg-slate-800 transition-colors ${
+                    workflow.id === currentWorkflowId ? "bg-slate-700 dark:bg-slate-800" : ""
+                  }`}
+                >
+                  <WorkflowIcon
+                    icon={workflow.icon}
+                    size={18}
+                    className="text-yellow-400"
+                  />
+                  <span className="text-sm font-medium">{workflow.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ChatKit Component */}
+      <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
+        <ChatKit
+          key={widgetInstanceKey}
+          control={chatkit.control}
+          className={
+            blockingError || isInitializingSession
+              ? "pointer-events-none opacity-0"
+              : "block h-full w-full"
+          }
+        />
+        <ErrorOverlay
+          error={blockingError}
+          fallbackMessage={
+            blockingError || !isInitializingSession ? null : (
+              <div className="flex items-center justify-center gap-2">
+                <Icon name="loader" size={20} className="animate-spin" />
+                <span>Loading assistant session...</span>
+              </div>
+            )
+          }
+          onRetry={blockingError && errors.retryable ? handleResetChat : null}
+          retryLabel="Restart chat"
+        />
+      </div>
+    </>
   );
 }
 
