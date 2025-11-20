@@ -24,6 +24,7 @@ type ChatKitPanelProps = {
   onWidgetAction: (action: FactAction) => Promise<void>;
   onResponseEnd: () => void;
   onThemeRequest: (scheme: ColorScheme) => void;
+  onToggleVisibility: () => void;
 };
 
 type ErrorState = {
@@ -48,6 +49,7 @@ export function ChatKitPanel({
   onWidgetAction,
   onResponseEnd,
   onThemeRequest,
+  onToggleVisibility,
 }: ChatKitPanelProps) {
   const processedFacts = useRef(new Set<string>());
   const [errors, setErrors] = useState<ErrorState>(() => createInitialErrors());
@@ -344,26 +346,40 @@ export function ChatKitPanel({
   }
 
   return (
-    <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
-      <ChatKit
-        key={widgetInstanceKey}
-        control={chatkit.control}
-        className={
-          blockingError || isInitializingSession
-            ? "pointer-events-none opacity-0"
-            : "block h-full w-full"
-        }
-      />
-      <ErrorOverlay
-        error={blockingError}
-        fallbackMessage={
-          blockingError || !isInitializingSession
-            ? null
-            : "Loading assistant session..."
-        }
-        onRetry={blockingError && errors.retryable ? handleResetChat : null}
-        retryLabel="Restart chat"
-      />
+    <div className="relative flex h-[70vh] max-h-[640px] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl transition-colors dark:bg-slate-900">
+      <div className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-2 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+        <span>CIX Agent</span>
+        <button
+          type="button"
+          aria-label="Minimize chat"
+          title="Minimize chat"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full text-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:text-slate-300 dark:hover:bg-slate-800"
+          onClick={onToggleVisibility}
+        >
+          -
+        </button>
+      </div>
+      <div className="relative flex-1">
+        <ChatKit
+          key={widgetInstanceKey}
+          control={chatkit.control}
+          className={
+            blockingError || isInitializingSession
+              ? "pointer-events-none opacity-0"
+              : "block h-full w-full"
+          }
+        />
+        <ErrorOverlay
+          error={blockingError}
+          fallbackMessage={
+            blockingError || !isInitializingSession
+              ? null
+              : "Loading assistant session..."
+          }
+          onRetry={blockingError && errors.retryable ? handleResetChat : null}
+          retryLabel="Restart chat"
+        />
+      </div>
     </div>
   );
 }

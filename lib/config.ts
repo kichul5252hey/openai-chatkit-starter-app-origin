@@ -7,9 +7,24 @@ export const CREATE_SESSION_ENDPOINT = "/api/create-session";
 
 export const STARTER_PROMPTS: StartScreenPrompt[] = [
   {
-    label: "What can you do?",
-    prompt: "What can you do?",
-    icon: "circle-question",
+    label: "Tell me all in-process opportunities for Sanofi (with probability ≥50%).",
+    prompt: "Tell me all in-process opportunities for Sanofi (with probability ≥50%).",
+  },
+  {
+    label: "Show all account running clinical trials for cystic fibrosis",
+    prompt: "Show all account running clinical trials for cystic fibrosis",
+  },
+  {
+    label: "Show me the clinical trials Clario is running",
+    prompt: "Show me the clinical trials Clario is running",
+  },
+  {
+    label: "Show me the competitive CROs running trials for Takeda",
+    prompt: "Show me the competitive CROs running trials for Takeda",
+  },
+  {
+    label: "Show me all my colleagues for Pfizer in the UK",
+    prompt: "Show me all my colleagues for Pfizer in the UK",
   },
 ];
 
