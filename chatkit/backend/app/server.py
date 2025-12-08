@@ -5,14 +5,27 @@ from __future__ import annotations
 from typing import Any, AsyncIterator
 
 from agents import Runner
-from chatkit.agents import simple_to_agent_input, stream_agent_response
+from chatkit.agents import AgentContext, simple_to_agent_input, stream_agent_response
 from chatkit.server import ChatKitServer
 from chatkit.types import ThreadMetadata, ThreadStreamEvent, UserMessageItem
 
-from .assistant import StarterAgentContext, assistant_agent
 from .memory_store import MemoryStore
+from agents import Agent
+
 
 MAX_RECENT_ITEMS = 30
+MODEL = "gpt-4.1-mini"
+
+
+assistant_agent = Agent[AgentContext[dict[str, Any]]](
+    model=MODEL,
+    name="Starter Assistant",
+    instructions=(
+        "You are a concise, helpful assistant. "
+        "Keep replies short and focus on directly answering "
+        "the user's request."
+    ),
+)
 
 
 class StarterChatServer(ChatKitServer[dict[str, Any]]):
@@ -38,7 +51,7 @@ class StarterChatServer(ChatKitServer[dict[str, Any]]):
         items = list(reversed(items_page.data))
         agent_input = await simple_to_agent_input(items)
 
-        agent_context = StarterAgentContext(
+        agent_context = AgentContext(
             thread=thread,
             store=self.store,
             request_context=context,
