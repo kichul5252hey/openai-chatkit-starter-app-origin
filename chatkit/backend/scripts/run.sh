@@ -11,7 +11,7 @@ cd "$PROJECT_ROOT"
 
 if [ ! -d ".venv" ]; then
   echo "Creating virtual env in $PROJECT_ROOT/.venv ..."
-  python -m venv .venv
+  python3 -m venv .venv
 fi
 
 source .venv/bin/activate

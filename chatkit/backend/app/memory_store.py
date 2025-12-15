@@ -15,6 +15,8 @@ class MemoryStore(Store[dict]):
     def __init__(self):
         self.threads: dict[str, ThreadMetadata] = {}
         self.items: dict[str, list[ThreadItem]] = defaultdict(list)
+        # Map thread_id -> user_id for filtering
+        self.thread_owners: dict[str, str] = {}
 
     async def load_thread(self, thread_id: str, context: dict) -> ThreadMetadata:
         if thread_id not in self.threads:
@@ -23,11 +25,23 @@ class MemoryStore(Store[dict]):
 
     async def save_thread(self, thread: ThreadMetadata, context: dict) -> None:
         self.threads[thread.id] = thread
+        # Associate thread with user_id if provided
+        user_id = context.get("user_id")
+        if user_id and thread.id not in self.thread_owners:
+            self.thread_owners[thread.id] = user_id
 
     async def load_threads(
         self, limit: int, after: str | None, order: str, context: dict
     ) -> Page[ThreadMetadata]:
-        threads = list(self.threads.values())
+        # Filter threads by user_id if provided
+        user_id = context.get("user_id")
+        if user_id:
+            threads = [
+                t for t in self.threads.values()
+                if self.thread_owners.get(t.id) == user_id
+            ]
+        else:
+            threads = list(self.threads.values())
         return self._paginate(
             threads,
             after,
@@ -74,6 +88,7 @@ class MemoryStore(Store[dict]):
     async def delete_thread(self, thread_id: str, context: dict) -> None:
         self.threads.pop(thread_id, None)
         self.items.pop(thread_id, None)
+        self.thread_owners.pop(thread_id, None)
 
     async def delete_thread_item(
         self, thread_id: str, item_id: str, context: dict
